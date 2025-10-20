@@ -14,8 +14,9 @@ public class Application {
             int sum = calculator.add(numbers);
             System.out.println("결과 : " + sum);
         } catch (IllegalArgumentException e) {
-            System.err.println("[ERROR] " + e.getMessage());
-            System.exit(1);
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }
