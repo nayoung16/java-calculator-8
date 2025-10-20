@@ -11,45 +11,62 @@ public class DelimitedNumberParser {
     private static final String ERR_CUSTOM_LEN = "커스텀 구분자는 단일 문자여야 합니다.";
     private static final String ERR_EMPTY_TOKEN = "빈 값(연속 구분자 포함)은 허용되지 않습니다.";
 
+    private static class Parsed {
+        final String delimRegex;
+        final String numbersPart;
+        Parsed(String delimRegex, String numbersPart) {
+            this.delimRegex = delimRegex;
+            this.numbersPart = numbersPart;
+        }
+    }
+
     public List<Integer> parse(String input) {
         if (input == null || input.isEmpty()) return Collections.emptyList();
 
-        String numbersPart = input;
-        String delimiterRegex = DEFAULT_DELIMS_REGEX;
+        Parsed p = parseHeaderIfAny(input);
+        if (p.numbersPart.isEmpty()) return Collections.emptyList();
 
-        if (input.startsWith("//")) {
-            int nl = input.indexOf("\\");
-            int ni = input.indexOf("n");
-            if ((nl < 0) || (ni < 0) || ((ni-nl) != 1)) {
-                throw new IllegalArgumentException(ERR_NEED_NL);
-            }
-            String custom = input.substring(2, nl);
-            if (custom.length() != 1) {
-                throw new IllegalArgumentException(ERR_CUSTOM_LEN);
-            }
-            delimiterRegex = Pattern.quote(custom);
-            numbersPart = input.substring(ni + 1);
+        String[] tokens = p.numbersPart.split(p.delimRegex, -1);
+        return toIntList(tokens);
+    }
+
+    private Parsed parseHeaderIfAny(String input) {
+        if (!input.startsWith("//")) {
+            return new Parsed(DEFAULT_DELIMS_REGEX, input);
+        }
+        int bs = input.indexOf("\\");
+        int n  = input.indexOf("n", bs + 1);
+        if (bs < 0 || n < 0 || (n - bs) != 1) {
+            throw new IllegalArgumentException(ERR_NEED_NL);
         }
 
-        if (numbersPart.isEmpty()) return Collections.emptyList();
+        String custom = input.substring(2, bs);
+        if (custom.length() != 1) {
+            throw new IllegalArgumentException(ERR_CUSTOM_LEN);
+        }
 
-        String[] tokens = numbersPart.split(delimiterRegex, -1);
+        String delimRegex  = Pattern.quote(custom);
+        String numbersPart = input.substring(n + 1);
+        return new Parsed(delimRegex, numbersPart);
+    }
+
+    private List<Integer> toIntList(String[] tokens) {
         List<Integer> result = new ArrayList<>(tokens.length);
-
         for (String token : tokens) {
-            if (token == null || token.trim().isEmpty()) {
+            String t = (token == null) ? "" : token.trim();
+            if (t.isEmpty()) {
                 throw new IllegalArgumentException(ERR_EMPTY_TOKEN);
             }
-            int n;
+            int num;
             try {
-                n = Integer.parseInt(token.trim());
+                num = Integer.parseInt(t);
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("숫자가 아닌 값이 포함되어 있습니다: " + token);
             }
-            if (n < 0) {
-                throw new IllegalArgumentException("음수는 허용되지 않습니다: " + n);
+            if (num < 0) {
+                throw new IllegalArgumentException("음수는 허용되지 않습니다: " + num);
             }
-            result.add(n);
+            result.add(num);
         }
         return result;
     }
