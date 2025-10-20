@@ -8,7 +8,6 @@ import java.util.regex.Pattern;
 public class DelimitedNumberParser {
     private static final String DEFAULT_DELIMS_REGEX = "[,:]";
     private static final String ERR_NEED_NL = "잘못된 형식: 커스텀 구분자 뒤에는 줄바꿈(\\n)이 필요합니다.";
-    private static final String ERR_CUSTOM_LEN = "커스텀 구분자는 단일 문자여야 합니다.";
     private static final String ERR_EMPTY_TOKEN = "빈 값(연속 구분자 포함)은 허용되지 않습니다.";
 
     private static class Parsed {
@@ -41,11 +40,8 @@ public class DelimitedNumberParser {
         }
 
         String custom = input.substring(2, bs);
-        if (custom.length() != 1) {
-            throw new IllegalArgumentException(ERR_CUSTOM_LEN);
-        }
 
-        String delimRegex  = Pattern.quote(custom);
+        String delimRegex = Pattern.quote(custom) + "|" + DEFAULT_DELIMS_REGEX;
         String numbersPart = input.substring(n + 1);
         return new Parsed(delimRegex, numbersPart);
     }
